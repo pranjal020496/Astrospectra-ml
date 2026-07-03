@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# Virtual environments
+.venv/
+env/
+
+# VS Code
+.vscode/
+
+# Downloaded data
+data/raw/*
+!data/raw/.gitkeep
+
+# Generated processed data
+data/processed/*
+!data/processed/.gitkeep
+
+# Trained models and generated outputs
+models/
+outputs/
