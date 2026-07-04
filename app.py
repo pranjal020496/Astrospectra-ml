@@ -31,6 +31,10 @@ RANDOM_FOREST_MODEL_FILE = Path(
     "models/random_forest_classifier.joblib"
 )
 
+ANOMALY_MODEL_FILE = Path(
+    "models/isolation_forest_anomaly_detector.joblib"
+)
+
 WAVELENGTH_MIN = 3800
 WAVELENGTH_MAX = 9000
 
@@ -165,13 +169,18 @@ def predict_with_model(
 ) -> tuple[str, float]:
     """Predict a class and confidence for one spectrum."""
 
+    reshaped_features = features.reshape(
+        1,
+        -1,
+    )
+
     prediction = model.predict(
-        features.reshape(1, -1)
+        reshaped_features
     )[0]
 
     if hasattr(model, "predict_proba"):
         probabilities = model.predict_proba(
-            features.reshape(1, -1)
+            reshaped_features
         )[0]
 
         confidence = float(
@@ -186,6 +195,36 @@ def predict_with_model(
     )
 
     return predicted_class, confidence
+
+
+def score_anomaly(
+    anomaly_model,
+    features: np.ndarray,
+) -> tuple[float, bool]:
+    """Calculate anomaly score for one spectrum."""
+
+    reshaped_features = features.reshape(
+        1,
+        -1,
+    )
+
+    normality_score = anomaly_model.decision_function(
+        reshaped_features
+    )[0]
+
+    anomaly_score = float(
+        -normality_score
+    )
+
+    anomaly_label = anomaly_model.predict(
+        reshaped_features
+    )[0]
+
+    is_anomaly = bool(
+        anomaly_label == -1
+    )
+
+    return anomaly_score, is_anomaly
 
 
 def show_overview(
@@ -277,7 +316,7 @@ def show_overview(
 def show_spectrum_explorer(
     dataset: dict[str, np.ndarray],
 ) -> None:
-    """Show an interactive spectrum viewer."""
+    """Show an interactive spectrum viewer and prediction panel."""
 
     features = dataset["X"]
     targets = dataset["y"]
@@ -288,6 +327,11 @@ def show_spectrum_explorer(
 
     st.title(
         "Spectrum Explorer"
+    )
+
+    st.write(
+        "Select one spectrum and compare model predictions, "
+        "confidence scores, and anomaly status."
     )
 
     selected_class = st.selectbox(
@@ -336,6 +380,10 @@ def show_spectrum_explorer(
         selected_option.split("|")[0].strip()
     )
 
+    selected_features = features[
+        selected_index
+    ]
+
     actual_class = str(
         class_names[int(targets[selected_index])]
     )
@@ -377,11 +425,15 @@ def show_spectrum_explorer(
 
     figure = plot_spectrum(
         wavelength=wavelength,
-        flux=features[selected_index],
+        flux=selected_features,
         title=f"{actual_class} spectrum",
     )
 
     st.pyplot(
+        figure
+    )
+
+    plt.close(
         figure
     )
 
@@ -406,7 +458,7 @@ def show_spectrum_explorer(
     if tuned_model is not None:
         predicted_class, confidence = predict_with_model(
             tuned_model,
-            features[selected_index],
+            selected_features,
             class_names,
         )
 
@@ -414,14 +466,15 @@ def show_spectrum_explorer(
             {
                 "Model": "Tuned Logistic Regression",
                 "Prediction": predicted_class,
-                "Confidence": confidence,
+                "Confidence": round(confidence, 3),
+                "Matches actual": predicted_class == actual_class,
             }
         )
 
     if random_forest_model is not None:
         predicted_class, confidence = predict_with_model(
             random_forest_model,
-            features[selected_index],
+            selected_features,
             class_names,
         )
 
@@ -429,7 +482,8 @@ def show_spectrum_explorer(
             {
                 "Model": "Random Forest",
                 "Prediction": predicted_class,
-                "Confidence": confidence,
+                "Confidence": round(confidence, 3),
+                "Matches actual": predicted_class == actual_class,
             }
         )
 
@@ -443,6 +497,62 @@ def show_spectrum_explorer(
             "No saved classical model files were found in models/. "
             "Run the training scripts first."
         )
+
+    st.subheader(
+        "Anomaly Check"
+    )
+
+    anomaly_model = load_joblib_model(
+        str(ANOMALY_MODEL_FILE)
+    )
+
+    if anomaly_model is None:
+        st.warning(
+            "No anomaly detector was found. Run "
+            "`python scripts/detect_anomalies.py` first."
+        )
+
+    else:
+        anomaly_score, is_anomaly = score_anomaly(
+            anomaly_model,
+            selected_features,
+        )
+
+        anomaly_column_1, anomaly_column_2 = st.columns(
+            2
+        )
+
+        anomaly_column_1.metric(
+            "Anomaly score",
+            f"{anomaly_score:.4f}",
+        )
+
+        anomaly_column_2.metric(
+            "Anomaly status",
+            "Flagged" if is_anomaly else "Normal",
+        )
+
+        if is_anomaly:
+            st.warning(
+                "This spectrum was flagged as unusual by the "
+                "Isolation Forest anomaly detector."
+            )
+        else:
+            st.success(
+                "This spectrum was not flagged as anomalous."
+            )
+
+    st.subheader(
+        "How to read this page"
+    )
+
+    st.write(
+        "A high model confidence means the classifier strongly prefers "
+        "one class. A high anomaly score means the spectrum looks unusual "
+        "compared with the rest of the dataset. A spectrum can be correctly "
+        "classified and still be anomalous, or incorrectly classified because "
+        "it is unusual."
+    )
 
 
 def show_model_comparison() -> None:
