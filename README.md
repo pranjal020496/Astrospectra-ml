@@ -94,3 +94,17 @@ The CNN underperformed the tuned logistic regression and Random Forest models. T
 | Tuned Logistic Regression | 86.7% | 26 / 30 | 4 | 0.864 |
 | Random Forest | 86.7% | 26 / 30 | 4 | 0.869 |
 | 1D CNN | 73.3% | 22 / 30 | 8 | 0.73 |
+
+
+### Anomaly Detection
+
+An Isolation Forest anomaly detector was trained on the medium processed dataset.
+
+- Dataset size: 150 spectra
+- PCA components: 20
+- Contamination setting: 10%
+- Detected anomalies: 15 spectra
+
+The top anomaly list was dominated by QSO spectra. Among the top 12 anomalies, 11 were QSOs and 1 was a GALAXY.
+
+This suggests that QSO spectra are more variable in this dataset and are harder for both the classifiers and anomaly detector. Some spectra that were flagged as anomalous were also misclassified by the tuned classifier, showing that anomaly detection can help identify difficult or unusual cases.
