@@ -1,110 +1,268 @@
-## Medium Dataset Results
+# AstroSpectra ML Workbench
+
+AstroSpectra ML Workbench is an end-to-end machine-learning app for working with astronomical spectra from SDSS.
+
+The project downloads real SDSS spectra, preprocesses them onto a common wavelength grid, trains multiple classifiers, detects unusual spectra, and provides an interactive Streamlit dashboard for exploration and prediction.
+
+## What the app does
+
+The app can:
+
+- Explore SDSS spectra for STAR, GALAXY, and QSO objects
+- Plot preprocessed flux versus wavelength
+- Predict object class using trained ML models
+- Compare model confidence scores
+- Detect anomalous or unusual spectra
+- Upload a new SDSS FITS spectrum and classify it
+
+## Current dataset
 
 The medium dataset contains 150 SDSS spectra:
 
-- 50 STAR
-- 50 GALAXY
-- 50 QSO
+| Class | Count |
+|---|---:|
+| STAR | 50 |
+| GALAXY | 50 |
+| QSO | 50 |
 
-The dataset was split into 120 training spectra and 30 test spectra.
+Each spectrum is preprocessed into a fixed-length vector:
 
-### Baseline Model
+```text
+2048 standardized flux values
+```
 
-- Test accuracy: 83.3%
-- Correct predictions: 25 out of 30
-- PCA components: 10
-- Logistic regression C: 1.0
-- Macro F1-score: 0.84
+The wavelength range used is approximately:
 
-### Tuned Model
+```text
+3800–9000 Å
+```
 
-- Test accuracy: 86.7%
-- Correct predictions: 26 out of 30
-- PCA components: 50
-- Logistic regression C: 0.1
-- Best cross-validation accuracy: 86.7%
-- Macro F1-score: 0.86
+## Current model results
 
-### Comparison
-
-Hyperparameter tuning increased test accuracy from 83.3% to 86.7%, an improvement of 3.4 percentage points. The tuned model correctly classified one additional test spectrum.
-
-The tuned model performed best with 50 PCA components and a logistic regression C value of 0.1.
-
-### Random Forest Model
-
-- Test accuracy: 86.7%
-- Correct predictions: 26 out of 30
-- Number of trees: 500
-- Macro F1-score: 0.87
-
-### Model Comparison
-
-| Model | Test Accuracy | Correct / 30 | Macro F1-score |
-|---|---:|---:|---:|
-| Baseline Logistic Regression | 83.3% | 25 / 30 | 0.84 |
-| Tuned Logistic Regression | 86.7% | 26 / 30 | 0.86 |
-| Random Forest | 86.7% | 26 / 30 | 0.87 |
-
-The Random Forest matched the tuned logistic regression accuracy. It did not improve the total number of correct predictions, but it achieved a slightly higher macro F1-score.
-
-The Random Forest made these mistakes:
-
-- STAR → GALAXY
-- QSO → GALAXY
-- QSO → GALAXY
-- GALAXY → QSO
-
-The tuned logistic regression also made four mistakes, but mostly confused QSOs with STAR. This means the two models are making different kinds of errors.
-
-### Classical Model Comparison
-
-All classical models were evaluated on the same medium dataset split:
-
-- Training spectra: 120
-- Testing spectra: 30
-- Classes: STAR, GALAXY, QSO
+All models were evaluated on the same test split of 30 spectra.
 
 | Model | Test Accuracy | Correct / 30 | Mistakes | Macro F1-score |
 |---|---:|---:|---:|---:|
 | Baseline Logistic Regression | 83.3% | 25 / 30 | 5 | 0.836 |
 | Tuned Logistic Regression | 86.7% | 26 / 30 | 4 | 0.864 |
 | Random Forest | 86.7% | 26 / 30 | 4 | 0.869 |
+| 1D CNN | 73.3% | 22 / 30 | 8 | 0.730 |
 
-The tuned logistic regression and Random Forest both achieved 86.7% test accuracy. Random Forest achieved the highest macro F1-score, but the improvement over tuned logistic regression was small.
+The best classical models currently outperform the CNN. This is expected because the dataset is still small for deep learning.
 
-This suggests that the current dataset may be too small for a more flexible classical model to clearly outperform the tuned linear baseline.
+## Key project insight
 
-### 1D CNN Model
+The anomaly detector found that the most unusual spectra were mostly QSOs.
 
-A small PyTorch 1D CNN was trained directly on the 2048-point flux sequences.
+Among the top 12 anomalies:
 
-- Test accuracy: 73.3%
-- Correct predictions: 22 out of 30
-- Mistakes: 8 out of 30
-- Test loss: 0.5264
-- Macro F1-score: 0.73
-- Training device: CPU
+```text
+11 QSO
+1 GALAXY
+0 STAR
+```
 
-The CNN underperformed the tuned logistic regression and Random Forest models. This is expected because the dataset is still small for deep learning. Classical models are currently stronger for this dataset.
+Some of the same QSO spectra were also misclassified by the classifiers. This suggests that unusual QSO spectra are one of the main challenges in the dataset.
 
-| Model | Test Accuracy | Correct / 30 | Mistakes | Macro F1-score |
-|---|---:|---:|---:|---:|
-| Baseline Logistic Regression | 83.3% | 25 / 30 | 5 | 0.836 |
-| Tuned Logistic Regression | 86.7% | 26 / 30 | 4 | 0.864 |
-| Random Forest | 86.7% | 26 / 30 | 4 | 0.869 |
-| 1D CNN | 73.3% | 22 / 30 | 8 | 0.73 |
+## Project structure
 
+```text
+astrospectra-ml/
+├── app.py
+├── astrospectra/
+│   ├── __init__.py
+│   ├── preprocessing.py
+│   └── spectrum.py
+├── scripts/
+│   ├── download_small_dataset.py
+│   ├── build_processed_dataset.py
+│   ├── train_baseline_classifier.py
+│   ├── download_medium_dataset.py
+│   ├── build_medium_dataset.py
+│   ├── train_medium_baseline.py
+│   ├── tune_medium_baseline.py
+│   ├── train_random_forest.py
+│   ├── compare_classical_models.py
+│   ├── train_cnn_classifier.py
+│   ├── detect_anomalies.py
+│   └── plot_tuned_mistakes.py
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── manifests/
+├── models/
+├── outputs/
+├── tests/
+├── pyproject.toml
+└── README.md
+```
 
-### Anomaly Detection
+Generated data, trained models, and output plots are not committed to GitHub.
 
-An Isolation Forest anomaly detector was trained on the medium processed dataset.
+## Installation
 
-- Dataset size: 150 spectra
-- PCA components: 20
-- Contamination setting: 10%
-- Detected anomalies: 15 spectra
+Create and activate a Conda environment:
 
-The top anomaly list was dominated by QSO spectra. Among the top 12 anomalies, 11 were QSOs and 1 was a GALAXY.
+```bash
+conda create -n astrospectra-ml python=3.11
+conda activate astrospectra-ml
+```
 
-This suggests that QSO spectra are more variable in this dataset and are harder for both the classifiers and anomaly detector. Some spectra that were flagged as anomalous were also misclassified by the tuned classifier, showing that anomaly detection can help identify difficult or unusual cases.
+Install the project dependencies:
+
+```bash
+python -m pip install -e ".[dev]"
+```
+
+The main dependencies include:
+
+```text
+numpy
+matplotlib
+astropy
+astroquery
+scikit-learn
+torch
+streamlit
+pandas
+pytest
+```
+
+## Reproduce the data pipeline
+
+Download the medium dataset:
+
+```bash
+python scripts/download_medium_dataset.py
+```
+
+Build the processed machine-learning dataset:
+
+```bash
+python scripts/build_medium_dataset.py
+```
+
+This creates:
+
+```text
+data/processed/medium_dataset.npz
+```
+
+## Train the models
+
+Train the fixed logistic-regression baseline:
+
+```bash
+python scripts/train_medium_baseline.py
+```
+
+Tune logistic regression with cross-validation:
+
+```bash
+python scripts/tune_medium_baseline.py
+```
+
+Train a Random Forest classifier:
+
+```bash
+python scripts/train_random_forest.py
+```
+
+Compare the classical models:
+
+```bash
+python scripts/compare_classical_models.py
+```
+
+Train the PyTorch 1D CNN:
+
+```bash
+python scripts/train_cnn_classifier.py
+```
+
+Run anomaly detection:
+
+```bash
+python scripts/detect_anomalies.py
+```
+
+## Run the Streamlit app
+
+Start the dashboard:
+
+```bash
+streamlit run app.py
+```
+
+Then open the local browser page shown by Streamlit, usually:
+
+```text
+http://localhost:8501
+```
+
+The app includes these pages:
+
+```text
+Overview
+Spectrum Explorer
+Upload Spectrum
+Model Comparison
+Anomaly Detection
+```
+
+## Upload Spectrum workflow
+
+The app can upload an SDSS FITS spectrum and then:
+
+1. Load the FITS file
+2. Preprocess the spectrum
+3. Plot the standardized flux
+4. Predict STAR, GALAXY, or QSO
+5. Show confidence scores
+6. Calculate anomaly score
+7. Warn if the spectrum looks unusual
+
+## Testing
+
+Run the tests with:
+
+```bash
+pytest
+```
+
+## Data and model files
+
+The following files and folders are generated locally and are not intended to be committed:
+
+```text
+data/raw/
+data/processed/
+models/
+outputs/
+```
+
+The repository tracks code, tests, configuration, documentation, and lightweight manifest files.
+
+## Current status
+
+Completed:
+
+- SDSS spectrum loading
+- Spectrum preprocessing
+- Small and medium datasets
+- Logistic-regression baseline
+- Hyperparameter tuning
+- Random Forest comparison
+- PyTorch 1D CNN
+- Anomaly detection
+- Streamlit dashboard
+- Upload-and-predict workflow
+
+Remaining possible improvements:
+
+- Add more tests
+- Add GitHub Actions
+- Add Docker support
+- Increase dataset size
+- Improve CNN performance with more data
+- Add deployment instructions
