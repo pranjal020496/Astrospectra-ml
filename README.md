@@ -74,3 +74,23 @@ All classical models were evaluated on the same medium dataset split:
 The tuned logistic regression and Random Forest both achieved 86.7% test accuracy. Random Forest achieved the highest macro F1-score, but the improvement over tuned logistic regression was small.
 
 This suggests that the current dataset may be too small for a more flexible classical model to clearly outperform the tuned linear baseline.
+
+### 1D CNN Model
+
+A small PyTorch 1D CNN was trained directly on the 2048-point flux sequences.
+
+- Test accuracy: 73.3%
+- Correct predictions: 22 out of 30
+- Mistakes: 8 out of 30
+- Test loss: 0.5264
+- Macro F1-score: 0.73
+- Training device: CPU
+
+The CNN underperformed the tuned logistic regression and Random Forest models. This is expected because the dataset is still small for deep learning. Classical models are currently stronger for this dataset.
+
+| Model | Test Accuracy | Correct / 30 | Mistakes | Macro F1-score |
+|---|---:|---:|---:|---:|
+| Baseline Logistic Regression | 83.3% | 25 / 30 | 5 | 0.836 |
+| Tuned Logistic Regression | 86.7% | 26 / 30 | 4 | 0.864 |
+| Random Forest | 86.7% | 26 / 30 | 4 | 0.869 |
+| 1D CNN | 73.3% | 22 / 30 | 8 | 0.73 |
