@@ -1,10 +1,14 @@
 from pathlib import Path
+import tempfile
 
 import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+from astrospectra.preprocessing import preprocess_spectrum
+from astrospectra.spectrum import load_sdss_spectrum
 
 
 DATASET_FILE = Path(
@@ -555,6 +559,218 @@ def show_spectrum_explorer(
     )
 
 
+def show_upload_spectrum(
+    dataset: dict[str, np.ndarray],
+) -> None:
+    """Upload one FITS spectrum and classify it."""
+
+    class_names = dataset["class_names"]
+
+    st.title(
+        "Upload Spectrum"
+    )
+
+    st.write(
+        "Upload an SDSS FITS spectrum file. The app will preprocess "
+        "the spectrum, plot it, classify it, and calculate an anomaly score."
+    )
+
+    uploaded_file = st.file_uploader(
+        "Upload a .fits file",
+        type=[
+            "fits",
+            "fit",
+        ],
+    )
+
+    if uploaded_file is None:
+        st.info(
+            "Upload an SDSS spectrum FITS file to begin."
+        )
+
+        return
+
+    temporary_path = None
+
+    try:
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".fits",
+        ) as temporary_file:
+            temporary_file.write(
+                uploaded_file.getbuffer()
+            )
+
+            temporary_path = Path(
+                temporary_file.name
+            )
+
+        spectrum = load_sdss_spectrum(
+            temporary_path
+        )
+
+        processed = preprocess_spectrum(
+            spectrum
+        )
+
+        flux = processed.flux
+
+        st.subheader(
+            "Uploaded Spectrum"
+        )
+
+        column_1, column_2 = st.columns(
+            2
+        )
+
+        column_1.metric(
+            "Class in FITS file",
+            spectrum.object_class,
+        )
+
+        column_2.metric(
+            "Redshift",
+            f"{spectrum.redshift:.4f}",
+        )
+
+        wavelength = make_wavelength_grid(
+            len(flux)
+        )
+
+        figure = plot_spectrum(
+            wavelength=wavelength,
+            flux=flux,
+            title="Uploaded preprocessed spectrum",
+        )
+
+        st.pyplot(
+            figure
+        )
+
+        plt.close(
+            figure
+        )
+
+        st.subheader(
+            "Model Predictions"
+        )
+
+        tuned_model = load_joblib_model(
+            str(TUNED_MODEL_FILE)
+        )
+
+        random_forest_model = load_joblib_model(
+            str(RANDOM_FOREST_MODEL_FILE)
+        )
+
+        prediction_rows = []
+
+        if tuned_model is not None:
+            predicted_class, confidence = predict_with_model(
+                tuned_model,
+                flux,
+                class_names,
+            )
+
+            prediction_rows.append(
+                {
+                    "Model": "Tuned Logistic Regression",
+                    "Prediction": predicted_class,
+                    "Confidence": round(confidence, 3),
+                    "Matches FITS class": (
+                        predicted_class == spectrum.object_class
+                    ),
+                }
+            )
+
+        if random_forest_model is not None:
+            predicted_class, confidence = predict_with_model(
+                random_forest_model,
+                flux,
+                class_names,
+            )
+
+            prediction_rows.append(
+                {
+                    "Model": "Random Forest",
+                    "Prediction": predicted_class,
+                    "Confidence": round(confidence, 3),
+                    "Matches FITS class": (
+                        predicted_class == spectrum.object_class
+                    ),
+                }
+            )
+
+        if prediction_rows:
+            st.dataframe(
+                pd.DataFrame(prediction_rows),
+                use_container_width=True,
+            )
+
+        else:
+            st.warning(
+                "No saved model files were found. Run the training "
+                "scripts first."
+            )
+
+        st.subheader(
+            "Anomaly Check"
+        )
+
+        anomaly_model = load_joblib_model(
+            str(ANOMALY_MODEL_FILE)
+        )
+
+        if anomaly_model is None:
+            st.warning(
+                "No anomaly detector was found. Run "
+                "`python scripts/detect_anomalies.py` first."
+            )
+
+        else:
+            anomaly_score, is_anomaly = score_anomaly(
+                anomaly_model,
+                flux,
+            )
+
+            column_1, column_2 = st.columns(
+                2
+            )
+
+            column_1.metric(
+                "Anomaly score",
+                f"{anomaly_score:.4f}",
+            )
+
+            column_2.metric(
+                "Anomaly status",
+                "Flagged" if is_anomaly else "Normal",
+            )
+
+            if is_anomaly:
+                st.warning(
+                    "This uploaded spectrum looks unusual compared "
+                    "with the medium training dataset."
+                )
+            else:
+                st.success(
+                    "This uploaded spectrum was not flagged as anomalous."
+                )
+
+    except Exception as error:
+        st.error(
+            "The uploaded file could not be processed."
+        )
+
+        st.exception(
+            error
+        )
+
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            temporary_path.unlink()
+
+
 def show_model_comparison() -> None:
     """Show model comparison results."""
 
@@ -713,6 +929,7 @@ def main() -> None:
         [
             "Overview",
             "Spectrum Explorer",
+            "Upload Spectrum",
             "Model Comparison",
             "Anomaly Detection",
         ],
@@ -734,6 +951,11 @@ def main() -> None:
 
     elif page == "Spectrum Explorer":
         show_spectrum_explorer(
+            dataset
+        )
+
+    elif page == "Upload Spectrum":
+        show_upload_spectrum(
             dataset
         )
 
