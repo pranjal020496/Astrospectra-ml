@@ -56,3 +56,21 @@ The Random Forest made these mistakes:
 - GALAXY → QSO
 
 The tuned logistic regression also made four mistakes, but mostly confused QSOs with STAR. This means the two models are making different kinds of errors.
+
+### Classical Model Comparison
+
+All classical models were evaluated on the same medium dataset split:
+
+- Training spectra: 120
+- Testing spectra: 30
+- Classes: STAR, GALAXY, QSO
+
+| Model | Test Accuracy | Correct / 30 | Mistakes | Macro F1-score |
+|---|---:|---:|---:|---:|
+| Baseline Logistic Regression | 83.3% | 25 / 30 | 5 | 0.836 |
+| Tuned Logistic Regression | 86.7% | 26 / 30 | 4 | 0.864 |
+| Random Forest | 86.7% | 26 / 30 | 4 | 0.869 |
+
+The tuned logistic regression and Random Forest both achieved 86.7% test accuracy. Random Forest achieved the highest macro F1-score, but the improvement over tuned logistic regression was small.
+
+This suggests that the current dataset may be too small for a more flexible classical model to clearly outperform the tuned linear baseline.
