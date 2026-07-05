@@ -1,5 +1,7 @@
 # AstroSpectra ML Workbench
 
+![Tests](https://github.com/pranjal020496/Astrospectra-ml/actions/workflows/tests.yml/badge.svg)
+
 AstroSpectra ML Workbench is an end-to-end machine-learning app for working with astronomical spectra from SDSS.
 
 The project downloads real SDSS spectra, preprocesses them onto a common wavelength grid, trains multiple classifiers, detects unusual spectra, and provides an interactive Streamlit dashboard for exploration and prediction.
