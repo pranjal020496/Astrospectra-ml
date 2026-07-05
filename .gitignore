@@ -14,7 +14,10 @@ env/
 # VS Code
 .vscode/
 
-# Downloaded data
+# Jupyter scratch notebooks
+*.ipynb
+
+# Downloaded raw data
 data/raw/*
 !data/raw/.gitkeep
 
