@@ -26,6 +26,27 @@ The project downloads real SDSS spectra, preprocesses them onto a common wavelen
 
 ![Anomaly Detection](docs/screenshots/anomaly_detection.png)
 
+## Why this project matters
+
+Astronomical and astrochemical research increasingly depends on reliable software pipelines for handling observational, simulated, and laboratory datasets. This project demonstrates a reproducible scientific machine-learning workflow for spectra: loading FITS data, preprocessing signals, training and comparing models, detecting unusual spectra, and exposing the workflow through an interactive dashboard.
+
+The goal is not only to build a classifier, but to show how astronomical data science workflows can be made testable, reproducible, and easier for researchers to inspect.
+
+## Relevance to Research Data Scientist / Astrochemistry Roles
+
+| Job requirement | Evidence in this project |
+|---|---|
+| Scientific software engineering | Modular Python package, reusable preprocessing code, scripts, tests, and documented workflows |
+| Machine learning for astronomical data | SDSS spectra classification with logistic regression, Random Forest, and PyTorch 1D CNN |
+| Data science and statistical evaluation | Cross-validation, model comparison, classification reports, confusion matrices, and anomaly detection |
+| Reproducible research | Fixed random seeds, manifest files, documented commands, and ignored generated data/model artifacts |
+| Research-code maintenance | Package structure, CLI-style scripts, tests, clear data/model boundaries, and GitHub workflow |
+| Astronomical data handling | FITS ingestion with Astropy and SDSS spectra from STAR, GALAXY, and QSO classes |
+| Interactive scientific tools | Streamlit dashboard with spectrum explorer, upload prediction, model comparison, and anomaly review |
+| Machine-learning framework experience | PyTorch 1D CNN and scikit-learn classifiers |
+| Large-data workflow foundation | Scripts separate raw data, processed datasets, model artifacts, and output reports |
+| Collaborative research readiness | README documentation, reproducible commands, test structure, and public GitHub repository |
+
 ## What the app does
 
 The app can:
