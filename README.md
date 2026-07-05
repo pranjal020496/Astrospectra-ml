@@ -4,6 +4,28 @@ AstroSpectra ML Workbench is an end-to-end machine-learning app for working with
 
 The project downloads real SDSS spectra, preprocesses them onto a common wavelength grid, trains multiple classifiers, detects unusual spectra, and provides an interactive Streamlit dashboard for exploration and prediction.
 
+## App Preview
+
+### Overview
+
+![Overview](docs/screenshots/overview.png)
+
+### Spectrum Explorer
+
+![Spectrum Explorer](docs/screenshots/spectrum_explorer.png)
+
+### Upload Spectrum Prediction
+
+![Upload Spectrum Prediction](docs/screenshots/upload_spectrum.png)
+
+### Model Comparison
+
+![Model Comparison](docs/screenshots/model_comparison.png)
+
+### Anomaly Detection
+
+![Anomaly Detection](docs/screenshots/anomaly_detection.png)
+
 ## What the app does
 
 The app can:
